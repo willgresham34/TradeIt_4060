@@ -1,4 +1,4 @@
-package edu.uga.cs.tradeit;
+package edu.uga.cs.tradeit.ui;
 
 import android.os.Bundle;
 
@@ -13,6 +13,8 @@ import android.widget.Button;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+
+import edu.uga.cs.tradeit.R;
 
 
 public class SplashFragment extends Fragment {

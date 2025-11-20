@@ -5,6 +5,7 @@ public class Category {
     private String id;
     private String name;
     private String createdBy;
+    private long createdAt;
     private int itemCount;
 
     public Category() { }
@@ -24,6 +25,9 @@ public class Category {
 
     public String getCreatedBy() { return createdBy; }
     public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
+
+    public long getCreatedAt() { return createdAt; }
+    public void setCreatedAt(long createdAt) { this.createdAt = createdAt; }
 
     public int getItemCount() { return itemCount; }
     public void setItemCount(int itemCount) { this.itemCount = itemCount; }

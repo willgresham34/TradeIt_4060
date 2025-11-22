@@ -8,7 +8,7 @@ public class Item {
     private String categoryId;
     private String sellerId;   // uid
     private long createdAt;
-    private String status;     // "available", "pending", "sold"
+    private String status;
 
     public Item() { }
 

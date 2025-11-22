@@ -11,11 +11,10 @@ public class ItemRepository {
     }
 
     // getItemsByCategory
-    public Item[] getItemsByCategory()
+    public Item[] getItemsByCategory(int catId)
     {
         return new Item[]{};
     }
-
 
     // getItemsByUser
     public Item[] getItemsByUser(int userId)

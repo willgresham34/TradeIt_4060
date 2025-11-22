@@ -1,49 +1,205 @@
 package edu.uga.cs.tradeit.repository;
 
+import android.util.Log;
+
+import androidx.annotation.NonNull;
+
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.MutableData;
+import com.google.firebase.database.Transaction;
+import com.google.firebase.database.ValueEventListener;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import edu.uga.cs.tradeit.models.Item;
+import edu.uga.cs.tradeit.models.enums.ItemStatus;
 
 public class ItemRepository {
 
-    // getItems - May not even need this one
-    public Item[] getItems()
-    {
-        return new Item[]{};
+    private static final String TAG = "ITEM_REPO";
+    private final DatabaseReference itemsRef;
+    private final DatabaseReference categoriesRef;
+    private final List<Item> cachedItems = new ArrayList<>();
+
+    public ItemRepository() {
+        FirebaseDatabase db = FirebaseDatabase.getInstance();
+        itemsRef = db.getReference("items");
+        categoriesRef = db.getReference("categories");
+
+        itemsRef.orderByChild("createdAt")
+                .addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        cachedItems.clear();
+                        for (DataSnapshot child : snapshot.getChildren()) {
+                            Item item = child.getValue(Item.class);
+                            if (item != null) {
+                                item.setId(child.getKey());
+                                // add at front so list is newest-first
+                                cachedItems.add(0,item);
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Log.w(TAG, error.toString());
+                    }
+                });
+    }
+
+    // getItems - may not need
+    public List<Item> getItems() {
+        return cachedItems;
     }
 
     // getItemsByCategory
-    public Item[] getItemsByCategory(int catId)
-    {
-        return new Item[]{};
+    public List<Item> getItemsByCategory(String catId) {
+        List<Item> result = new ArrayList<>();
+        if (catId == null) {
+            return result;
+        }
+
+        for (Item item : cachedItems) {
+            if (!catId.equals(item.getCategoryId())) {
+                continue;
+            }
+            if (!ItemStatus.AVAILABLE.name().equals(item.getStatus())) {
+                continue;
+            }
+            result.add(item);
+        }
+        return result;
     }
 
     // getItemsByUser
-    public Item[] getItemsByUser(int userId)
-    {
-        return new Item[]{};
+    public List<Item> getItemsByUser(String userId) {
+        List<Item> result = new ArrayList<>();
+        if (userId == null) {
+            return result;
+        }
+
+        for (Item item: cachedItems) {
+            if (userId.equals(item.getSellerId())) {
+                result.add(item);
+            }
+        }
+        return result;
     }
 
     // getItemById
-    public Item getItemById(int itemId)
-    {
-        return new Item();
+    public Item getItemById(String itemId) {
+        if (itemId == null) {
+            return null;
+        }
+        for (Item item : cachedItems) {
+            if (itemId.equals(item.getId())) {
+                return item;
+            }
+        }
+        return null;
     }
 
-    // addItem
-    public int addItem(Item item)
-    {
-        return 0;
+    /*
+     * addItem
+     */
+    public int addItem(Item item) {
+        if (item == null || item.getCategoryId() == null || item.getSellerId() == null) {
+            return 0;
+        }
+
+        String key = itemsRef.push().getKey();
+        if (key == null) {
+            return 0;
+        }
+
+        item.setId(key);
+        item.setCreatedAt(System.currentTimeMillis());
+        if (item.getStatus() == null) {
+            item.setStatus(ItemStatus.AVAILABLE.name());
+        }
+
+        itemsRef.child(key).setValue(item);
+
+        incrementCategoryItemCount(item.getCategoryId(), +1);
+
+        return 1;
     }
 
-    // deleteItem
-    public void deleteItem(int itemId)
-    {
 
+    /*
+     * deletes Item
+     */
+    public void deleteItem(String itemId) {
+        if (itemId == null) {
+            return;
+        }
+
+        Item existing = getItemById(itemId);
+        if (existing == null) {
+            return;
+        }
+
+        if (existing.getStatus() != null &&
+                existing.getStatus().equals(ItemStatus.PENDING.name())) {
+            return;
+        }
+
+        String categoryId = existing.getCategoryId();
+
+        itemsRef.child(itemId).removeValue();
+
+        incrementCategoryItemCount(categoryId, -1);
     }
 
-    // update item
-    public void updateItem(Item item)
-    {
+    /**
+     * update an items name or price
+     */
+    public void updateItem(Item item) {
+        if (item == null || item.getId() == null) {
+            return;
+        }
 
+        Item existing = getItemById(item.getId());
+        if (existing == null) {
+            return;
+        }
+
+        item.setCategoryId(existing.getCategoryId());
+        item.setCreatedAt(existing.getCreatedAt());
+        item.setSellerId(existing.getSellerId());
+
+        itemsRef.child(item.getId()).setValue(item);
     }
 
+    /*
+     * increments categories item count
+     */
+    private void incrementCategoryItemCount(String categoryId, int delta) {
+        if (categoryId == null || delta == 0) {
+            return;
+        }
+
+        categoriesRef.child(categoryId).child("itemCount")
+                .runTransaction(new Transaction.Handler() {
+                    @NonNull
+                    @Override
+                    public Transaction.Result doTransaction(@NonNull MutableData currentData) {
+                        Integer current = currentData.getValue(Integer.class);
+                        if (current == null) {
+                            current = 0;
+                        }
+                        currentData.setValue(current + delta);
+                        return Transaction.success(currentData);
+                    }
+
+                    @Override
+                    public void onComplete(DatabaseError error, boolean committed, DataSnapshot currentData) {
+                    }
+                });
+    }
 }

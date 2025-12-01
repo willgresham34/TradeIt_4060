@@ -23,7 +23,7 @@ import edu.uga.cs.tradeit.repository.AuthRepository;
 public class LoginFragment extends Fragment {
 
     private EditText emailEditText, passwordEditText;
-    private Button loginButton, goToSignUpButton;
+    private Button loginButton, goToSignUpButton, forgotPasswordButton;
     private AuthRepository authRepository;
 
     public LoginFragment() {}
@@ -39,11 +39,13 @@ public class LoginFragment extends Fragment {
         passwordEditText = view.findViewById(R.id.etPassword);
         loginButton = view.findViewById(R.id.btnLogin);
         goToSignUpButton = view.findViewById(R.id.btnGoToSignUp);
+        forgotPasswordButton = view.findViewById(R.id.btnForgotPassword);
 
         authRepository = new AuthRepository();
 
         loginButton.setOnClickListener(v -> loginUser());
         goToSignUpButton.setOnClickListener(v -> goToSignUp());
+        forgotPasswordButton.setOnClickListener(v -> goToForgotPassword());
 
         return view;
     }
@@ -111,4 +113,12 @@ public class LoginFragment extends Fragment {
                 .addToBackStack(null)
                 .commit();
     }
+    private void goToForgotPassword() {
+        requireActivity().getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.main, new ForgotPasswordFragment())
+                .addToBackStack(null)
+                .commit();
+    }
+
 }

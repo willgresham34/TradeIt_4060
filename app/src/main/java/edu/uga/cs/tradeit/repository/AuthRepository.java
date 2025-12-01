@@ -25,4 +25,9 @@ public class AuthRepository {
     public void logout() {
         mAuth.signOut();
     }
+
+    public void sendPasswordResetEmail(String email, OnCompleteListener<Void> listener) {
+        mAuth.sendPasswordResetEmail(email)
+                .addOnCompleteListener(listener);
+    }
 }

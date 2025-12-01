@@ -218,7 +218,6 @@ public class HomeFragment extends Fragment implements CategoryAdapter.OnCategory
         inflater.inflate(R.menu.menu_main, menu);
     }
 
-
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
@@ -232,6 +231,9 @@ public class HomeFragment extends Fragment implements CategoryAdapter.OnCategory
         } else if (id == R.id.action_my_transactions) {
             openMyTransactions();
             return true;
+        } else if (id == R.id.action_my_listings) {
+            openMyListings();
+            return true;
         }
 
         return super.onOptionsItemSelected(item);
@@ -241,6 +243,13 @@ public class HomeFragment extends Fragment implements CategoryAdapter.OnCategory
         requireActivity().getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.main, new MyTransactionsFragment())
+                .addToBackStack(null)
+                .commit();
+    }
+    private void openMyListings() {
+        requireActivity().getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.main, new MyListingsFragment())
                 .addToBackStack(null)
                 .commit();
     }

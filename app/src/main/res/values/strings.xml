@@ -54,5 +54,16 @@
     <string name="hint_item_description">Description (optional)</string>
     <string name="seller_label">Seller: %1$s</string>
     <string name="posted_date_label">Posted: %1$s</string>
+    <string name="menu_my_listings">My Listings</string>
+    <string name="menu_my_transactions">My Transactions</string>
+    <string name="title_my_active_listings">My Active Listings</string>
+    <string name="empty_my_listings">You have no active listings.</string>
+    <string name="pending_buys_title">Pending Buys</string>
+    <string name="pending_sales_title">Pending Sales</string>
+    <string name="pending_buys_empty">No pending buys.</string>
+    <string name="pending_sales_empty">No pending sales.</string>
+    <string name="completed_transactions_title">Completed Transactions</string>
+    <string name="completed_transactions_empty">No completed transactions yet.</string>
+
 
 </resources>

@@ -9,6 +9,12 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/action_my_listings"
+        android:title="My Listings"
+        android:orderInCategory="60"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_change_password"
         android:title="@string/menu_change_password"
         android:orderInCategory="50"

@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import edu.uga.cs.tradeit.R;
 import edu.uga.cs.tradeit.models.Item;
@@ -31,16 +32,21 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     private final OnConfirmClickListener confirmClickListener;
     private final ItemRepository itemRepository;
 
+    private final Map<String, String> categoryMap;
+
     public TransactionAdapter(List<Transaction> transactions,
                               String currentUserId,
                               boolean showConfirmButton,
                               OnConfirmClickListener confirmClickListener,
-                              ItemRepository itemRepository) {
+                              ItemRepository itemRepository,
+                              Map<String, String> categoryMap) {
+
         this.transactions = transactions;
         this.currentUserId = currentUserId;
         this.showConfirmButton = showConfirmButton;
         this.confirmClickListener = confirmClickListener;
         this.itemRepository = itemRepository;
+        this.categoryMap = categoryMap;
     }
 
     public void setTransactions(List<Transaction> transactions) {
@@ -60,22 +66,30 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     public void onBindViewHolder(@NonNull TransactionViewHolder holder, int position) {
         Transaction tx = transactions.get(position);
 
-        // Get item name if possible
         Item item = itemRepository.getItemById(tx.getItemId());
         String itemName = item != null && item.getName() != null ? item.getName() : "(Unknown item)";
         holder.itemNameTextView.setText(itemName);
 
-        // Determine role (buyer vs seller)
+        String categoryName = "(Unknown Category)";
+        if (tx.getCategoryId() != null && categoryMap.containsKey(tx.getCategoryId())) {
+            categoryName = categoryMap.get(tx.getCategoryId());
+        }
+        holder.categoryTextView.setText(categoryName);
+
         String role;
+        String otherParty;
+
         if (currentUserId != null && currentUserId.equals(tx.getBuyerId())) {
             role = "Buying";
+            otherParty = tx.getSellerName();
         } else if (currentUserId != null && currentUserId.equals(tx.getSellerId())) {
             role = "Selling";
+            otherParty = tx.getBuyerName();
         } else {
             role = "";
+            otherParty = null;
         }
 
-        // Price/free text
         String priceText;
         Double price = tx.getPrice();
         if (price == null || price == 0.0 || tx.isFree()) {
@@ -84,19 +98,26 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
             priceText = holder.itemView.getContext().getString(R.string.label_price_format, price);
         }
 
-        String roleAndPrice;
+        StringBuilder roleAndPrice = new StringBuilder();
         if (!role.isEmpty()) {
-            roleAndPrice = role + " • " + priceText;
-        } else {
-            roleAndPrice = priceText;
+            roleAndPrice.append(role);
         }
-        holder.roleAndPriceTextView.setText(roleAndPrice);
+        if (roleAndPrice.length() > 0) {
+            roleAndPrice.append(" • ");
+        }
+        roleAndPrice.append(priceText);
 
-        // Date: for pending use createdAt; for completed prefer completedAt
+        if (otherParty != null && !otherParty.isEmpty()) {
+            roleAndPrice.append(" • ").append(otherParty);
+        }
+
+        holder.roleAndPriceTextView.setText(roleAndPrice.toString());
+
         long timestamp = tx.getCreatedAt();
         if (tx.getCompletedAt() != null && tx.getCompletedAt() > 0) {
             timestamp = tx.getCompletedAt();
         }
+
         if (timestamp > 0) {
             DateFormat df = DateFormat.getDateInstance();
             holder.dateTextView.setText(df.format(new Date(timestamp)));
@@ -104,14 +125,16 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
             holder.dateTextView.setText("");
         }
 
-        // Confirm button
-        if (showConfirmButton && TransactionStatus.PENDING.name().equalsIgnoreCase(tx.getStatus())) {
+        if (showConfirmButton &&
+                TransactionStatus.PENDING.name().equalsIgnoreCase(tx.getStatus())) {
+
             holder.confirmButton.setVisibility(View.VISIBLE);
             holder.confirmButton.setOnClickListener(v -> {
                 if (confirmClickListener != null) {
                     confirmClickListener.onConfirm(tx);
                 }
             });
+
         } else {
             holder.confirmButton.setVisibility(View.GONE);
         }
@@ -123,6 +146,8 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     }
 
     static class TransactionViewHolder extends RecyclerView.ViewHolder {
+
+        TextView categoryTextView;
         TextView itemNameTextView;
         TextView roleAndPriceTextView;
         TextView dateTextView;
@@ -130,6 +155,8 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
 
         public TransactionViewHolder(@NonNull View itemView) {
             super(itemView);
+
+            categoryTextView = itemView.findViewById(R.id.tvTxCategory);   // NEW
             itemNameTextView = itemView.findViewById(R.id.tvTxItemName);
             roleAndPriceTextView = itemView.findViewById(R.id.tvTxRoleAndPrice);
             dateTextView = itemView.findViewById(R.id.tvTxDate);

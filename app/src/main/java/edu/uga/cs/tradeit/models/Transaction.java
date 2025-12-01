@@ -10,8 +10,11 @@ public class Transaction {
     private Double price;
     private boolean free;
     private long createdAt;
-    private String status;       // "pending" or "completed"
+    private String status; // PENDING or COMPLETED
     private Long completedAt;
+
+    private String sellerName;
+    private String buyerName;
 
     public Transaction() { }
 
@@ -60,4 +63,10 @@ public class Transaction {
 
     public Long getCompletedAt() { return completedAt; }
     public void setCompletedAt(Long completedAt) { this.completedAt = completedAt; }
+
+    public String getSellerName() { return sellerName; }
+    public void setSellerName(String sellerName) { this.sellerName = sellerName; }
+
+    public String getBuyerName() { return buyerName; }
+    public void setBuyerName(String buyerName) { this.buyerName = buyerName; }
 }

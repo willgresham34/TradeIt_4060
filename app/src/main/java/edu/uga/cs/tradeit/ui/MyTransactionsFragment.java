@@ -18,6 +18,7 @@ import com.google.firebase.auth.FirebaseUser;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import edu.uga.cs.tradeit.R;
 import edu.uga.cs.tradeit.models.Transaction;
@@ -26,17 +27,22 @@ import edu.uga.cs.tradeit.repository.TransactionRepository;
 
 public class MyTransactionsFragment extends Fragment {
 
-    private RecyclerView pendingRecyclerView;
+    private RecyclerView pendingBuysRecyclerView;
+    private RecyclerView pendingSalesRecyclerView;
     private RecyclerView completedRecyclerView;
-    private TextView pendingEmptyTextView;
+    private TextView pendingBuysEmptyTextView;
+    private TextView pendingSalesEmptyTextView;
     private TextView completedEmptyTextView;
 
-    private TransactionAdapter pendingAdapter;
+    private TransactionAdapter pendingBuysAdapter;
+    private TransactionAdapter pendingSalesAdapter;
     private TransactionAdapter completedAdapter;
 
     private TransactionRepository transactionRepository;
     private ItemRepository itemRepository;
     private String currentUserId;
+
+    private Map<String, String> categoryMap;
 
     public MyTransactionsFragment() {}
 
@@ -47,12 +53,16 @@ public class MyTransactionsFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_my_transactions, container, false);
 
-        pendingRecyclerView = view.findViewById(R.id.rvPendingTransactions);
+        pendingBuysRecyclerView = view.findViewById(R.id.rvPendingBuys);
+        pendingSalesRecyclerView = view.findViewById(R.id.rvPendingSales);
         completedRecyclerView = view.findViewById(R.id.rvCompletedTransactions);
-        pendingEmptyTextView = view.findViewById(R.id.tvPendingEmpty);
+
+        pendingBuysEmptyTextView = view.findViewById(R.id.tvPendingBuysEmpty);
+        pendingSalesEmptyTextView = view.findViewById(R.id.tvPendingSalesEmpty);
         completedEmptyTextView = view.findViewById(R.id.tvCompletedEmpty);
 
-        pendingRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
+        pendingBuysRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
+        pendingSalesRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         completedRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
 
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
@@ -69,12 +79,22 @@ public class MyTransactionsFragment extends Fragment {
         itemRepository = new ItemRepository();
         transactionRepository = new TransactionRepository();
 
-        pendingAdapter = new TransactionAdapter(
+        pendingBuysAdapter = new TransactionAdapter(
                 new ArrayList<>(),
                 currentUserId,
                 true,
                 this::confirmTransaction,
-                itemRepository
+                itemRepository,
+                categoryMap
+        );
+
+        pendingSalesAdapter = new TransactionAdapter(
+                new ArrayList<>(),
+                currentUserId,
+                true,
+                this::confirmTransaction,
+                itemRepository,
+                categoryMap
         );
 
         completedAdapter = new TransactionAdapter(
@@ -82,10 +102,12 @@ public class MyTransactionsFragment extends Fragment {
                 currentUserId,
                 false,
                 null,
-                itemRepository
+                itemRepository,
+                categoryMap
         );
 
-        pendingRecyclerView.setAdapter(pendingAdapter);
+        pendingBuysRecyclerView.setAdapter(pendingBuysAdapter);
+        pendingSalesRecyclerView.setAdapter(pendingSalesAdapter);
         completedRecyclerView.setAdapter(completedAdapter);
 
         refreshTransactions();
@@ -94,13 +116,27 @@ public class MyTransactionsFragment extends Fragment {
     }
 
     private void refreshTransactions() {
-        List<Transaction> pending = transactionRepository.pendingTransactionByUser(currentUserId);
+        // Use the repo's helper methods as base, then partition
+        List<Transaction> pendingAll = transactionRepository.pendingTransactionByUser(currentUserId);
         List<Transaction> completed = transactionRepository.completedTransactionByUser(currentUserId);
 
-        pendingAdapter.setTransactions(pending);
+        List<Transaction> pendingBuys = new ArrayList<>();
+        List<Transaction> pendingSales = new ArrayList<>();
+
+        for (Transaction tx : pendingAll) {
+            if (currentUserId.equals(tx.getBuyerId())) {
+                pendingBuys.add(tx);
+            } else if (currentUserId.equals(tx.getSellerId())) {
+                pendingSales.add(tx);
+            }
+        }
+
+        pendingBuysAdapter.setTransactions(pendingBuys);
+        pendingSalesAdapter.setTransactions(pendingSales);
         completedAdapter.setTransactions(completed);
 
-        pendingEmptyTextView.setVisibility(pending.isEmpty() ? View.VISIBLE : View.GONE);
+        pendingBuysEmptyTextView.setVisibility(pendingBuys.isEmpty() ? View.VISIBLE : View.GONE);
+        pendingSalesEmptyTextView.setVisibility(pendingSales.isEmpty() ? View.VISIBLE : View.GONE);
         completedEmptyTextView.setVisibility(completed.isEmpty() ? View.VISIBLE : View.GONE);
     }
 
@@ -110,7 +146,6 @@ public class MyTransactionsFragment extends Fragment {
                 "Transaction confirmed.",
                 Toast.LENGTH_SHORT).show();
 
-        // refresh lists after confirmation
         refreshTransactions();
     }
 }

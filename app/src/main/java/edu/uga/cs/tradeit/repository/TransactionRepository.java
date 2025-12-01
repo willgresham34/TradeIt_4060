@@ -9,6 +9,8 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +19,7 @@ import edu.uga.cs.tradeit.models.Item;
 import edu.uga.cs.tradeit.models.Transaction;
 import edu.uga.cs.tradeit.models.enums.ItemStatus;
 import edu.uga.cs.tradeit.models.enums.TransactionStatus;
+
 
 public class TransactionRepository {
 
@@ -86,6 +89,17 @@ public class TransactionRepository {
         tx.setStatus(TransactionStatus.PENDING.name());
         tx.setCompletedAt(null);
 
+        tx.setSellerName(item.getSellerName());
+
+        FirebaseUser current = FirebaseAuth.getInstance().getCurrentUser();
+        if (current != null) {
+            String buyerName = current.getDisplayName();
+            if (buyerName == null || buyerName.isEmpty()) {
+                buyerName = current.getEmail();
+            }
+            tx.setBuyerName(buyerName);
+        }
+
         transactionsRef.child(txId).setValue(tx);
 
         itemsRef.child(item.getId()).child("status").setValue(ItemStatus.PENDING.name());
@@ -93,9 +107,7 @@ public class TransactionRepository {
         return txId;
     }
 
-    /*
-     * Get all PENDING transactions for a given user
-     */
+
     public List<Transaction> pendingTransactionByUser(String userId) {
         List<Transaction> result = new ArrayList<>();
         if (userId == null) {
@@ -113,9 +125,6 @@ public class TransactionRepository {
         return result;
     }
 
-    /**
-     * Get all COMPLETED transactions for a given user,
-     */
     public List<Transaction> completedTransactionByUser(String userId) {
         List<Transaction> result = new ArrayList<>();
         if (userId == null) {

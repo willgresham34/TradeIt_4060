@@ -10,23 +10,52 @@
         android:layout_height="wrap_content">
 
         <TextView
-            android:id="@+id/tvPendingTitle"
+            android:id="@+id/tvPendingBuysTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Pending Transactions"
+            android:text="Pending Buys"
             android:textSize="18sp"
             android:textStyle="bold" />
 
         <TextView
-            android:id="@+id/tvPendingEmpty"
+            android:id="@+id/tvPendingBuysEmpty"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="No pending transactions."
+            android:text="No pending buys."
             android:visibility="gone"
             android:layout_marginTop="4dp" />
 
         <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvPendingTransactions"
+            android:id="@+id/rvPendingBuys"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="16dp"
+            android:background="#CCCCCC" />
+
+        <TextView
+            android:id="@+id/tvPendingSalesTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Pending Sales"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp" />
+
+        <TextView
+            android:id="@+id/tvPendingSalesEmpty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="No pending sales."
+            android:visibility="gone"
+            android:layout_marginTop="4dp" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvPendingSales"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp" />

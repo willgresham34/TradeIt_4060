@@ -38,5 +38,21 @@
     <string name="error_category_name_required">Category name is required</string>
     <string name="error_category_already_exists">Category already exists</string>
     <string name="error_add_category_failed">Failed to add category: %1$s</string>
+    <string name="title_items_in_category">Items in %1$s</string>
+    <string name="add_item">Add Item</string>
+    <string name="no_items_in_category">No items in this category yet.</string>
+    <string name="dialog_add_item_title">Add Item</string>
+    <string name="hint_item_name">Item name</string>
+    <string name="hint_item_price">Price (e.g. 10.50) or leave blank for free</string>
+    <string name="label_item_free">Mark as free</string>
+    <string name="error_item_name_required">Item name is required</string>
+    <string name="error_price_invalid">Invalid price format</string>
+    <string name="error_add_item_failed">Failed to add item: %1$s</string>
+    <string name="error_must_be_logged_in_to_add_item">You must be logged in to add items</string>
+    <string name="label_free">Free</string>
+    <string name="label_price_format">$%1$.2f</string>
+    <string name="hint_item_description">Description (optional)</string>
+    <string name="seller_label">Seller: %1$s</string>
+    <string name="posted_date_label">Posted: %1$s</string>
 
 </resources>

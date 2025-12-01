@@ -192,9 +192,16 @@ public class HomeFragment extends Fragment implements CategoryAdapter.OnCategory
 
     @Override
     public void onCategoryClick(Category category) {
-        Toast.makeText(requireContext(),
-                "Clicked: " + category.getName(),
-                Toast.LENGTH_SHORT).show();
+        CategoryItemsFragment fragment = CategoryItemsFragment.newInstance(
+                category.getId(),
+                category.getName()
+        );
+
+        requireActivity().getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.main, fragment)
+                .addToBackStack(null)
+                .commit();
     }
 
     @Override

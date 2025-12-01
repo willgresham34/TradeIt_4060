@@ -9,6 +9,8 @@ public class Item {
     private String sellerId;   // uid
     private long createdAt;
     private String status;
+    private String description;
+    private String sellerName;
 
     public Item() { }
 
@@ -22,6 +24,7 @@ public class Item {
         this.createdAt = createdAt;
         this.status = status;
     }
+
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
@@ -42,4 +45,10 @@ public class Item {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    public String getSellerName() { return sellerName; }
+    public void setSellerName(String sellerName) { this.sellerName = sellerName; }
 }

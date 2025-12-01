@@ -3,6 +3,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/action_my_transactions"
+        android:title="My Transactions"
+        android:orderInCategory="75"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_change_password"
         android:title="@string/menu_change_password"
         android:orderInCategory="50"

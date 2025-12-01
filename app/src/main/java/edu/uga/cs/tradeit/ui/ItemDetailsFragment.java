@@ -18,6 +18,14 @@ import java.util.Date;
 import edu.uga.cs.tradeit.R;
 import edu.uga.cs.tradeit.models.Item;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
+import edu.uga.cs.tradeit.models.enums.ItemStatus;
+import edu.uga.cs.tradeit.repository.ItemRepository;
+import edu.uga.cs.tradeit.repository.TransactionRepository;
+
+
 public class ItemDetailsFragment extends Fragment {
 
     private static final String ARG_ITEM_ID = "item_id";
@@ -112,9 +120,56 @@ public class ItemDetailsFragment extends Fragment {
         }
 
         acceptBuyButton.setOnClickListener(v -> {
-            Toast.makeText(requireContext(),
-                    "TODO: Accept/Buy logic for item: " + itemName,
-                    Toast.LENGTH_LONG).show();
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            if (user == null) {
+                Toast.makeText(requireContext(),
+                        "You must be logged in to accept or buy an item.",
+                        Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            ItemRepository itemRepo = new ItemRepository();
+            Item item = itemRepo.getItemById(itemId);
+
+            if (item == null) {
+                Toast.makeText(requireContext(),
+                        "This item is no longer available.",
+                        Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            // prevent buying your own item
+            if (user.getUid().equals(item.getSellerId())) {
+                Toast.makeText(requireContext(),
+                        "You cannot accept or buy your own item.",
+                        Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            // only allow if item is available
+            if (item.getStatus() == null ||
+                    !ItemStatus.AVAILABLE.name().equals(item.getStatus())) {
+                Toast.makeText(requireContext(),
+                        "This item is no longer available.",
+                        Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            TransactionRepository txRepo = new TransactionRepository();
+            String txId = txRepo.startTransaction(item, user.getUid());
+
+            if (txId == null) {
+                Toast.makeText(requireContext(),
+                        "Failed to start transaction. Please try again.",
+                        Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(requireContext(),
+                        "Request sent to the seller.",
+                        Toast.LENGTH_LONG).show();
+
+                // go back to the previous screen
+                requireActivity().getOnBackPressedDispatcher().onBackPressed();
+            }
         });
 
         return view;

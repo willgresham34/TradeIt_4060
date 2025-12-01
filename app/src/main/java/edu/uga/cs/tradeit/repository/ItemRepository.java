@@ -108,7 +108,7 @@ public class ItemRepository {
      * addItem
      */
     public int addItem(Item item) {
-        if (item == null || item.getCategoryId() == null || item.getSellerId() == null) {
+        if (item == null) {
             return 0;
         }
 
@@ -117,16 +117,16 @@ public class ItemRepository {
             return 0;
         }
 
+        long now = System.currentTimeMillis();
         item.setId(key);
-        item.setCreatedAt(System.currentTimeMillis());
+        if (item.getCreatedAt() == 0L) {
+            item.setCreatedAt(now);
+        }
         if (item.getStatus() == null) {
             item.setStatus(ItemStatus.AVAILABLE.name());
         }
 
         itemsRef.child(key).setValue(item);
-
-        incrementCategoryItemCount(item.getCategoryId(), +1);
-
         return 1;
     }
 
@@ -202,4 +202,45 @@ public class ItemRepository {
                     }
                 });
     }
+    // listener interface for items
+    public interface ItemsListener {
+        void onItemsChanged(List<Item> items);
+        void onError(DatabaseError error);
+    }
+
+    public ValueEventListener listenToItemsForCategory(String categoryId, final ItemsListener listener) {
+        if (categoryId == null) {
+            return null;
+        }
+
+        ValueEventListener valueEventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                List<Item> items = new ArrayList<>();
+                for (DataSnapshot child : snapshot.getChildren()) {
+                    Item item = child.getValue(Item.class);
+                    if (item != null) {
+                        item.setId(child.getKey());
+                        items.add(item);
+                    }
+                }
+
+                // sort from newest to oldest based on createdAt
+                items.sort((i1, i2) -> Long.compare(i2.getCreatedAt(), i1.getCreatedAt()));
+
+                listener.onItemsChanged(items);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                listener.onError(error);
+            }
+        };
+
+        // filter by categoryId in the query
+        return itemsRef.orderByChild("categoryId")
+                .equalTo(categoryId)
+                .addValueEventListener(valueEventListener);
+    }
+
 }

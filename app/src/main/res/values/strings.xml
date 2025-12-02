@@ -43,6 +43,7 @@
     <string name="add_item">Add Item</string>
     <string name="no_items_in_category">No items in this category yet.</string>
     <string name="dialog_add_item_title">Add Item</string>
+    <string name="dialog_edit_item_title">Edit item</string>
     <string name="hint_item_name">Item name</string>
     <string name="hint_item_price">Price (e.g. 10.50) or leave blank for free</string>
     <string name="label_item_free">Mark as free</string>

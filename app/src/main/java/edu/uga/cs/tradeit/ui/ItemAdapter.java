@@ -19,6 +19,11 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
         void onItemClick(Item item);
     }
 
+    // extended listener for long-click actions to show edit/delete
+    public interface OnItemLongClickListener extends OnItemClickListener {
+        void onItemLongClick(Item item, View anchorView);
+    }
+
     private List<Item> items;
     private OnItemClickListener listener;
 
@@ -77,13 +82,22 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
 
         holder.metaTextView.setText(meta);
 
+        // normal click will open details
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onItemClick(item);
             }
         });
-    }
 
+        // a long click will give fragment a chance to show edit/delete
+        holder.itemView.setOnLongClickListener(v -> {
+            if (listener instanceof OnItemLongClickListener) {
+                ((OnItemLongClickListener) listener).onItemLongClick(item, v);
+                return true;
+            }
+            return false;
+        });
+    }
 
     @Override
     public int getItemCount() {

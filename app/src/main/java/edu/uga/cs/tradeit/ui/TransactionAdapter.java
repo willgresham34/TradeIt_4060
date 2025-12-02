@@ -32,6 +32,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     private final OnConfirmClickListener confirmClickListener;
     private final ItemRepository itemRepository;
 
+    // categoryId -> categoryName (can be null if you’re not using it yet)
     private final Map<String, String> categoryMap;
 
     public TransactionAdapter(List<Transaction> transactions,
@@ -68,6 +69,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
 
         Item item = itemRepository.getItemById(tx.getItemId());
         String itemName = item != null && item.getName() != null ? item.getName() : "(Unknown item)";
+        holder.itemNameTextView.setText(itemName);
 
         String role;
         String otherParty;
@@ -118,6 +120,7 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
             holder.dateTextView.setText("");
         }
 
+        // ----- Confirm button -----
         if (showConfirmButton &&
                 TransactionStatus.PENDING.name().equalsIgnoreCase(tx.getStatus())) {
 

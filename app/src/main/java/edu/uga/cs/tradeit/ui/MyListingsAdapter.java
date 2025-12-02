@@ -19,10 +19,17 @@ public class MyListingsAdapter extends RecyclerView.Adapter<MyListingsAdapter.My
 
     private List<Item> items;
     private Map<String, String> categoryNamesById;
+    public interface OnItemInteractionListener {
+        void onItemClick(Item item, View anchorView);
+        void onItemLongClick(Item item, View anchorView);
+    }
 
-    public MyListingsAdapter(List<Item> items, Map<String, String> categoryNamesById) {
+    private OnItemInteractionListener listener;
+
+    public MyListingsAdapter(List<Item> items, Map<String, String> categoryNamesById, OnItemInteractionListener listener) {
         this.items = items;
         this.categoryNamesById = categoryNamesById;
+        this.listener = listener;
     }
 
     public void setData(List<Item> items, Map<String, String> categoryNamesById) {
@@ -30,6 +37,7 @@ public class MyListingsAdapter extends RecyclerView.Adapter<MyListingsAdapter.My
         this.categoryNamesById = categoryNamesById;
         notifyDataSetChanged();
     }
+
 
     @NonNull
     @Override
@@ -68,6 +76,14 @@ public class MyListingsAdapter extends RecyclerView.Adapter<MyListingsAdapter.My
                     holder.itemView.getContext().getString(R.string.label_price_format, price)
             );
         }
+
+        holder.itemView.setOnLongClickListener(v -> {
+            if (listener != null) {
+                listener.onItemLongClick(item, v);
+            }
+            return true;
+        });
+
     }
 
     @Override

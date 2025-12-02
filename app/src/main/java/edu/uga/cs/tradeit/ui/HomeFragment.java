@@ -24,6 +24,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,8 +49,7 @@ public class HomeFragment extends Fragment implements CategoryAdapter.OnCategory
     private CategoryAdapter adapter;
     private List<Category> categoryList = new ArrayList<>();
     private CategoryRepository categoryRepository;
-
-    private com.google.firebase.database.ValueEventListener categoryListener;
+    private ValueEventListener categoryListener;
 
     public HomeFragment() {
     }

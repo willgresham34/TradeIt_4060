@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.PopupMenu;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -28,8 +29,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import edu.uga.cs.tradeit.R;
+import edu.uga.cs.tradeit.models.Category;
 import edu.uga.cs.tradeit.models.Item;
 import edu.uga.cs.tradeit.models.enums.ItemStatus;
+import edu.uga.cs.tradeit.repository.CategoryRepository;
 import edu.uga.cs.tradeit.repository.ItemRepository;
 
 public class CategoryItemsFragment extends Fragment implements ItemAdapter.OnItemClickListener {
@@ -37,6 +40,7 @@ public class CategoryItemsFragment extends Fragment implements ItemAdapter.OnIte
     private static final String ARG_CATEGORY_ID = "category_id";
     private static final String ARG_CATEGORY_NAME = "category_name";
 
+    private Category currentCategory;
     private String categoryId;
     private String categoryName;
 
@@ -50,7 +54,10 @@ public class CategoryItemsFragment extends Fragment implements ItemAdapter.OnIte
     private List<Item> items = new ArrayList<>();
 
     private ItemRepository itemRepository;
+    private CategoryRepository categoryRepository;
+
     private ValueEventListener itemsListener;
+    private ValueEventListener categoryListener;
 
     public CategoryItemsFragment() {}
 
@@ -73,6 +80,7 @@ public class CategoryItemsFragment extends Fragment implements ItemAdapter.OnIte
         }
 
         itemRepository = new ItemRepository();
+        categoryRepository = new CategoryRepository();
     }
 
     @Nullable
@@ -100,6 +108,41 @@ public class CategoryItemsFragment extends Fragment implements ItemAdapter.OnIte
         addItemButton.setOnClickListener(v -> showAddItemDialog());
 
         subscribeToItems();
+        subscribeToCategory();
+
+        Button btnCategoryActions = view.findViewById(R.id.btnCategoryActions);
+        btnCategoryActions.setOnClickListener(v -> {
+            PopupMenu popup = new PopupMenu(requireContext(), v);
+            popup.getMenu().add(0, 1, 0, "Update category");
+            popup.getMenu().add(0, 2, 1, "Delete category");
+
+            popup.setOnMenuItemClickListener(item -> {
+                if (item.getItemId() == 1) {
+                    // Update category
+                    if (currentCategory != null) {
+                        showUpdateCategoryDialog(currentCategory);
+                    } else {
+                        Toast.makeText(requireContext(),
+                                "Category not loaded yet",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                    return true;
+                } else if (item.getItemId() == 2) {
+                    // Delete category
+                    if (currentCategory != null) {
+                        handleDeleteCategory(currentCategory);
+                    } else {
+                        Toast.makeText(requireContext(),
+                                "Category not loaded yet",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                    return true;
+                }
+                return false;
+            });
+
+            popup.show();
+        });
 
         return view;
     }
@@ -127,6 +170,34 @@ public class CategoryItemsFragment extends Fragment implements ItemAdapter.OnIte
                 showLoading(false);
                 Toast.makeText(requireContext(),
                         "Failed to load items: " + error.getMessage(),
+                        Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void subscribeToCategory() {
+        categoryListener = categoryRepository.listenToCategories(new CategoryRepository.CategoryListener() {
+            @Override
+            public void onCategoriesChanged(List<Category> categories) {
+                for (Category c : categories) {
+                    if (c.getId() != null && c.getId().equals(categoryId)) {
+                        currentCategory = c;
+
+                        // update title if name changed
+                        if (c.getName() != null) {
+                            categoryName = c.getName();
+                            String title = getString(R.string.title_items_in_category, categoryName);
+                            titleTextView.setText(title);
+                        }
+                        break;
+                    }
+                }
+            }
+
+            @Override
+            public void onError(DatabaseError error) {
+                Toast.makeText(requireContext(),
+                        "Failed to load category: " + error.getMessage(),
                         Toast.LENGTH_LONG).show();
             }
         });
@@ -238,5 +309,76 @@ public class CategoryItemsFragment extends Fragment implements ItemAdapter.OnIte
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+         if (categoryListener != null) {
+             categoryRepository.removeCategoriesListener(categoryListener);
+             categoryListener = null;
+         }
+    }
+
+    private void showUpdateCategoryDialog(@NonNull Category category) {
+        final EditText input = new EditText(requireContext());
+        input.setHint(getString(R.string.hint_category_name));
+        input.setSingleLine(true);
+
+        if (category.getName() != null) {
+            input.setText(category.getName());
+            input.setSelection(input.getText().length());
+        }
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle(R.string.dialog_update_category_title)
+                .setView(input)
+                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                    String name = input.getText().toString().trim();
+                    handleUpdateCategory(category, name);
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    private void handleUpdateCategory(@NonNull Category category, String name) {
+        if (!items.isEmpty()) {
+            Toast.makeText(requireContext(),
+                    "Cannot update a category with items.",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        if (TextUtils.isEmpty(name)) {
+            Toast.makeText(requireContext(),
+                    getString(R.string.error_category_name_required),
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        if (name.equals(category.getName())) {
+            return;
+        }
+
+        category.setName(name);
+        categoryRepository.updateCategory(category);
+
+        Toast.makeText(requireContext(),
+                "Category updated",
+                Toast.LENGTH_SHORT).show();
+    }
+
+    private void handleDeleteCategory(@NonNull Category category) {
+        if (!items.isEmpty()) {
+            Toast.makeText(requireContext(),
+                    "Cannot delete a category with items.",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Delete category")
+                .setMessage("Are you sure you want to delete this category?")
+                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                    categoryRepository.deleteCategory(category.getId());
+                    requireActivity().getSupportFragmentManager().popBackStack();
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
     }
 }

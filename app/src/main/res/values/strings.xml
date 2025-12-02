@@ -34,6 +34,7 @@
     <string name="add_category">Add Category</string>
     <string name="no_categories">No categories yet. Add one to get started.</string>
     <string name="dialog_add_category_title">Add Category</string>
+    <string name="dialog_update_category_title">Update Category</string>
     <string name="hint_category_name">Category name</string>
     <string name="error_category_name_required">Category name is required</string>
     <string name="error_category_already_exists">Category already exists</string>

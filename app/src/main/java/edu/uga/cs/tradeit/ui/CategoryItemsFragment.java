@@ -32,7 +32,8 @@ import edu.uga.cs.tradeit.models.Item;
 import edu.uga.cs.tradeit.models.enums.ItemStatus;
 import edu.uga.cs.tradeit.repository.ItemRepository;
 
-public class CategoryItemsFragment extends Fragment implements ItemAdapter.OnItemClickListener {
+public class CategoryItemsFragment extends Fragment
+        implements ItemAdapter.OnItemLongClickListener {
 
     private static final String ARG_CATEGORY_ID = "category_id";
     private static final String ARG_CATEGORY_NAME = "category_name";
@@ -94,6 +95,7 @@ public class CategoryItemsFragment extends Fragment implements ItemAdapter.OnIte
         }
 
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
+        // Use the extended listener (this implements OnItemLongClickListener)
         adapter = new ItemAdapter(items, this);
         recyclerView.setAdapter(adapter);
 
@@ -224,6 +226,7 @@ public class CategoryItemsFragment extends Fragment implements ItemAdapter.OnIte
         }
     }
 
+    // a normal click will open the details screen
     @Override
     public void onItemClick(Item item) {
         ItemDetailsFragment fragment = ItemDetailsFragment.newInstance(item, categoryName);
@@ -233,6 +236,140 @@ public class CategoryItemsFragment extends Fragment implements ItemAdapter.OnIte
                 .replace(R.id.main, fragment)
                 .addToBackStack(null)
                 .commit();
+    }
+
+    // a long click will show edit/delete for seller on AVAILABLE items
+    @Override
+    public void onItemLongClick(Item item, View anchorView) {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            Toast.makeText(requireContext(),
+                    "You must be logged in to modify items.",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        // only the seller can modify
+        if (!user.getUid().equals(item.getSellerId())) {
+            Toast.makeText(requireContext(),
+                    "You can only edit or delete your own items.",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        // we can allow modifying AVAILABLE items
+        if (item.getStatus() == null ||
+                !ItemStatus.AVAILABLE.name().equals(item.getStatus())) {
+            Toast.makeText(requireContext(),
+                    "Only available items can be edited or deleted.",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        String[] options = {"Edit item", "Delete item"};
+        new AlertDialog.Builder(requireContext())
+                .setTitle(item.getName())
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        showEditItemDialog(item);
+                    } else if (which == 1) {
+                        confirmDeleteItem(item);
+                    }
+                })
+                .show();
+    }
+
+    private void showEditItemDialog(Item item) {
+        View dialogView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_add_item, null);
+
+        EditText nameEditText = dialogView.findViewById(R.id.etItemName);
+        EditText priceEditText = dialogView.findViewById(R.id.etItemPrice);
+        CheckBox freeCheckBox = dialogView.findViewById(R.id.cbItemFree);
+
+        // prefill fields from existing item
+        nameEditText.setText(item.getName());
+
+        Double existingPrice = item.getPrice();
+        boolean isFree = (existingPrice == null || existingPrice == 0.0);
+        freeCheckBox.setChecked(isFree);
+        if (isFree) {
+            priceEditText.setEnabled(false);
+            priceEditText.setText("");
+        } else {
+            priceEditText.setEnabled(true);
+            priceEditText.setText(String.valueOf(existingPrice));
+        }
+
+        freeCheckBox.setOnCheckedChangeListener((buttonView, checked) -> {
+            if (checked) {
+                priceEditText.setEnabled(false);
+                priceEditText.setText("");
+            } else {
+                priceEditText.setEnabled(true);
+            }
+        });
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle(R.string.dialog_edit_item_title)
+                .setView(dialogView)
+                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                    String newName = nameEditText.getText().toString().trim();
+                    String priceText = priceEditText.getText().toString().trim();
+                    boolean nowFree = freeCheckBox.isChecked();
+                    handleEditItem(item, newName, priceText, nowFree);
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    private void handleEditItem(Item originalItem, String newName,
+                                String priceText, boolean isFree) {
+        if (TextUtils.isEmpty(newName)) {
+            Toast.makeText(requireContext(),
+                    getString(R.string.error_item_name_required),
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        Double price = 0.0;
+        if (!isFree && !TextUtils.isEmpty(priceText)) {
+            try {
+                price = Double.parseDouble(priceText);
+            } catch (NumberFormatException e) {
+                Toast.makeText(requireContext(),
+                        getString(R.string.error_price_invalid),
+                        Toast.LENGTH_LONG).show();
+                return;
+            }
+        }
+
+        Item updated = new Item();
+        updated.setId(originalItem.getId());
+        updated.setName(newName);
+        updated.setPrice(price);
+        updated.setStatus(originalItem.getStatus());
+        // categoryId, createdAt, sellerId will be preserved in repository.updateItem
+
+        itemRepository.updateItem(updated);
+
+        Toast.makeText(requireContext(),
+                "Item updated.",
+                Toast.LENGTH_SHORT).show();
+    }
+
+    private void confirmDeleteItem(Item item) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Delete item")
+                .setMessage("Are you sure you want to delete this item?")
+                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                    itemRepository.deleteItem(item.getId());
+                    Toast.makeText(requireContext(),
+                            "Item deleted.",
+                            Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
     }
 
     @Override

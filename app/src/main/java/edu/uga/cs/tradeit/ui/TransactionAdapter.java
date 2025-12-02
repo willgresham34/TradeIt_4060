@@ -68,13 +68,6 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
 
         Item item = itemRepository.getItemById(tx.getItemId());
         String itemName = item != null && item.getName() != null ? item.getName() : "(Unknown item)";
-        holder.itemNameTextView.setText(itemName);
-
-        String categoryName = "(Unknown Category)";
-        if (tx.getCategoryId() != null && categoryMap.containsKey(tx.getCategoryId())) {
-            categoryName = categoryMap.get(tx.getCategoryId());
-        }
-        holder.categoryTextView.setText(categoryName);
 
         String role;
         String otherParty;
@@ -146,8 +139,6 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     }
 
     static class TransactionViewHolder extends RecyclerView.ViewHolder {
-
-        TextView categoryTextView;
         TextView itemNameTextView;
         TextView roleAndPriceTextView;
         TextView dateTextView;
@@ -156,7 +147,6 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         public TransactionViewHolder(@NonNull View itemView) {
             super(itemView);
 
-            categoryTextView = itemView.findViewById(R.id.tvTxCategory);   // NEW
             itemNameTextView = itemView.findViewById(R.id.tvTxItemName);
             roleAndPriceTextView = itemView.findViewById(R.id.tvTxRoleAndPrice);
             dateTextView = itemView.findViewById(R.id.tvTxDate);

@@ -153,7 +153,6 @@ public class CategoryItemsFragment extends Fragment implements ItemAdapter.OnIte
                 .inflate(R.layout.dialog_add_item, null);
 
         EditText nameEditText = dialogView.findViewById(R.id.etItemName);
-        EditText descriptionEditText = dialogView.findViewById(R.id.etItemDescription);
         EditText priceEditText = dialogView.findViewById(R.id.etItemPrice);
         CheckBox freeCheckBox = dialogView.findViewById(R.id.cbItemFree);
 
@@ -171,16 +170,15 @@ public class CategoryItemsFragment extends Fragment implements ItemAdapter.OnIte
                 .setView(dialogView)
                 .setPositiveButton(android.R.string.ok, (dialog, which) -> {
                     String name = nameEditText.getText().toString().trim();
-                    String description = descriptionEditText.getText().toString().trim();
                     String priceText = priceEditText.getText().toString().trim();
                     boolean isFree = freeCheckBox.isChecked();
-                    handleAddItem(name, description, priceText, isFree);
+                    handleAddItem(name, priceText, isFree);
                 })
                 .setNegativeButton(android.R.string.cancel, null)
                 .show();
     }
 
-    private void handleAddItem(String name, String description, String priceText, boolean isFree) {
+    private void handleAddItem(String name, String priceText, boolean isFree) {
         if (TextUtils.isEmpty(name)) {
             Toast.makeText(requireContext(),
                     getString(R.string.error_item_name_required),

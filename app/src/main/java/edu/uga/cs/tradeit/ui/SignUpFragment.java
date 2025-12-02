@@ -69,6 +69,15 @@ public class SignUpFragment extends Fragment {
 
         authRepository.signUp(email, password, task -> {
             if (task.isSuccessful()) {
+                com.google.firebase.auth.FirebaseUser fbUser =
+                        com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+
+                if (fbUser != null) {
+                    edu.uga.cs.tradeit.repository.UserRepository userRepo =
+                            new edu.uga.cs.tradeit.repository.UserRepository();
+
+                    userRepo.saveUserOnSignUp(fbUser.getUid(), email);
+                }
                 Toast.makeText(requireContext(),
                         "Registered user: " + email,
                         Toast.LENGTH_SHORT).show();

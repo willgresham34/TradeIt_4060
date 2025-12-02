@@ -30,7 +30,6 @@ public class ItemDetailsFragment extends Fragment {
 
     private static final String ARG_ITEM_ID = "item_id";
     private static final String ARG_ITEM_NAME = "item_name";
-    private static final String ARG_ITEM_DESCRIPTION = "item_description";
     private static final String ARG_ITEM_PRICE = "item_price";
     private static final String ARG_ITEM_SELLER = "item_seller";
     private static final String ARG_ITEM_CREATED_AT = "item_created_at";
@@ -38,7 +37,6 @@ public class ItemDetailsFragment extends Fragment {
 
     private String itemId;
     private String itemName;
-    private String itemDescription;
     private double itemPrice;
     private String itemSeller;
     private long itemCreatedAt;
@@ -51,14 +49,14 @@ public class ItemDetailsFragment extends Fragment {
         Bundle args = new Bundle();
         args.putString(ARG_ITEM_ID, item.getId());
         args.putString(ARG_ITEM_NAME, item.getName());
-        args.putString(ARG_ITEM_DESCRIPTION, item.getDescription());
         args.putDouble(ARG_ITEM_PRICE, item.getPrice() != null ? item.getPrice() : 0.0);
-        args.putString(ARG_ITEM_SELLER, item.getSellerName());
+        args.putString(ARG_ITEM_SELLER, item.getSellerId());
         args.putLong(ARG_ITEM_CREATED_AT, item.getCreatedAt());
         args.putString(ARG_CATEGORY_NAME, categoryName);
         fragment.setArguments(args);
         return fragment;
     }
+
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -67,7 +65,6 @@ public class ItemDetailsFragment extends Fragment {
         if (getArguments() != null) {
             itemId = getArguments().getString(ARG_ITEM_ID);
             itemName = getArguments().getString(ARG_ITEM_NAME);
-            itemDescription = getArguments().getString(ARG_ITEM_DESCRIPTION);
             itemPrice = getArguments().getDouble(ARG_ITEM_PRICE, 0.0);
             itemSeller = getArguments().getString(ARG_ITEM_SELLER);
             itemCreatedAt = getArguments().getLong(ARG_ITEM_CREATED_AT, 0L);
@@ -85,7 +82,6 @@ public class ItemDetailsFragment extends Fragment {
         TextView nameTextView = view.findViewById(R.id.tvItemDetailName);
         TextView categoryTextView = view.findViewById(R.id.tvItemDetailCategory);
         TextView priceTextView = view.findViewById(R.id.tvItemDetailPrice);
-        TextView descriptionTextView = view.findViewById(R.id.tvItemDetailDescription);
         TextView sellerTextView = view.findViewById(R.id.tvItemDetailSeller);
         TextView postedDateTextView = view.findViewById(R.id.tvItemDetailPostedDate);
         Button acceptBuyButton = view.findViewById(R.id.btnAcceptBuy);
@@ -99,14 +95,19 @@ public class ItemDetailsFragment extends Fragment {
             priceTextView.setText(getString(R.string.label_price_format, itemPrice));
         }
 
-        if (itemDescription != null && !itemDescription.isEmpty()) {
-            descriptionTextView.setText(itemDescription);
-        } else {
-            descriptionTextView.setText("");
-        }
-
         if (itemSeller != null && !itemSeller.isEmpty()) {
-            sellerTextView.setText(getString(R.string.seller_label, itemSeller));
+            edu.uga.cs.tradeit.repository.UserRepository userRepo =
+                    new edu.uga.cs.tradeit.repository.UserRepository();
+
+            userRepo.getUserEmailById(itemSeller, email -> {
+                if (!isAdded()) return;
+
+                if (email != null && !email.isEmpty()) {
+                    sellerTextView.setText(getString(R.string.seller_label, email));
+                } else {
+                    sellerTextView.setText(getString(R.string.seller_label, "Unknown seller"));
+                }
+            });
         } else {
             sellerTextView.setText("");
         }
@@ -129,47 +130,46 @@ public class ItemDetailsFragment extends Fragment {
             }
 
             ItemRepository itemRepo = new ItemRepository();
-            Item item = itemRepo.getItemById(itemId);
 
-            if (item == null) {
-                Toast.makeText(requireContext(),
-                        "This item is no longer available.",
-                        Toast.LENGTH_LONG).show();
-                return;
-            }
+            itemRepo.getItemByIdAsync(itemId, item -> {
+                if (item == null) {
+                    Toast.makeText(requireContext(),
+                            "Error: couldn't find item " + itemId,
+                            Toast.LENGTH_LONG).show();
+                    return;
+                }
 
-            // prevent buying your own item
-            if (user.getUid().equals(item.getSellerId())) {
-                Toast.makeText(requireContext(),
-                        "You cannot accept or buy your own item.",
-                        Toast.LENGTH_LONG).show();
-                return;
-            }
+                // prevent buying your own item
+                if (user.getUid().equals(item.getSellerId())) {
+                    Toast.makeText(requireContext(),
+                            "You cannot accept or buy your own item.",
+                            Toast.LENGTH_LONG).show();
+                    return;
+                }
 
-            // only allow if item is available
-            if (item.getStatus() == null ||
-                    !ItemStatus.AVAILABLE.name().equals(item.getStatus())) {
-                Toast.makeText(requireContext(),
-                        "This item is no longer available.",
-                        Toast.LENGTH_LONG).show();
-                return;
-            }
+                // only allow if item is available
+                if (item.getStatus() == null ||
+                        !ItemStatus.AVAILABLE.name().equals(item.getStatus())) {
+                    Toast.makeText(requireContext(),
+                            "This item is no longer available.",
+                            Toast.LENGTH_LONG).show();
+                    return;
+                }
 
-            TransactionRepository txRepo = new TransactionRepository();
-            String txId = txRepo.startTransaction(item, user.getUid());
+                TransactionRepository txRepo = new TransactionRepository();
+                String txId = txRepo.startTransaction(item, user.getUid());
 
-            if (txId == null) {
-                Toast.makeText(requireContext(),
-                        "Failed to start transaction. Please try again.",
-                        Toast.LENGTH_LONG).show();
-            } else {
-                Toast.makeText(requireContext(),
-                        "Request sent to the seller.",
-                        Toast.LENGTH_LONG).show();
-
-                // go back to the previous screen
-                requireActivity().getOnBackPressedDispatcher().onBackPressed();
-            }
+                if (txId == null) {
+                    Toast.makeText(requireContext(),
+                            "Failed to start transaction. Please try again.",
+                            Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(requireContext(),
+                            "Request sent to the seller.",
+                            Toast.LENGTH_LONG).show();
+                    requireActivity().getOnBackPressedDispatcher().onBackPressed();
+                }
+            });
         });
 
         return view;

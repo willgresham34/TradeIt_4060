@@ -12,13 +12,16 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import edu.uga.cs.tradeit.models.Category;
 
 public class CategoryRepository {
 
     private final DatabaseReference categoriesRef;
+    private List<Category> cachedCategories = new ArrayList<>();
 
     public CategoryRepository() {
         categoriesRef = FirebaseDatabase.getInstance().getReference("categories");
@@ -55,6 +58,7 @@ public class CategoryRepository {
                         return c1.getName().toLowerCase().compareTo(c2.getName().toLowerCase());
                     }
                 });
+                cachedCategories = categories;
 
                 listener.onCategoriesChanged(categories);
             }
@@ -92,6 +96,45 @@ public class CategoryRepository {
 
         categoriesRef.child(key).setValue(category)
                 .addOnCompleteListener(listener);
+    }
+
+    public void updateCategory(Category cat) {
+        if (cat == null || cat.getId() == null) {
+            return;
+        }
+
+        if (cat.getItemCount() > 0) {
+            return;
+        }
+
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("name", cat.getName());
+        updates.put("createdAt", System.currentTimeMillis());
+
+        categoriesRef.child(cat.getId()).updateChildren(updates);
+    }
+
+    /*
+     * deletes a category.
+     */
+    public void deleteCategory(String categoryId) {
+        if (categoryId == null) {
+            return;
+        }
+
+        Category cat = null;
+        for (Category c : cachedCategories) {
+            if (categoryId.equals(c.getId())) {
+                cat = c;
+                break;
+            }
+        }
+
+        if (cat == null || cat.getItemCount() > 0) {
+            return;
+        }
+
+        categoriesRef.child(categoryId).removeValue();
     }
     public void removeCategoriesListener(ValueEventListener listener) {
         if (listener != null) {

@@ -79,15 +79,15 @@ public class MyTransactionsFragment extends Fragment {
         itemRepository = new ItemRepository();
         transactionRepository = new TransactionRepository();
 
+        // Set up adapters
         pendingBuysAdapter = new TransactionAdapter(
                 new ArrayList<>(),
                 currentUserId,
-                true,
+                false,
                 this::confirmTransaction,
                 itemRepository,
                 categoryMap
         );
-
         pendingSalesAdapter = new TransactionAdapter(
                 new ArrayList<>(),
                 currentUserId,
@@ -96,7 +96,6 @@ public class MyTransactionsFragment extends Fragment {
                 itemRepository,
                 categoryMap
         );
-
         completedAdapter = new TransactionAdapter(
                 new ArrayList<>(),
                 currentUserId,
@@ -110,9 +109,13 @@ public class MyTransactionsFragment extends Fragment {
         pendingSalesRecyclerView.setAdapter(pendingSalesAdapter);
         completedRecyclerView.setAdapter(completedAdapter);
 
-        refreshTransactions();
+        transactionRepository.setListener(allTransactions -> {
+            if (!isAdded()) return;
+            refreshTransactions();
+        });
 
         return view;
+
     }
 
     private void refreshTransactions() {

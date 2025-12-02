@@ -101,6 +101,10 @@ public class HomeFragment extends Fragment implements CategoryAdapter.OnCategory
         categoryListener = categoryRepository.listenToCategories(new CategoryRepository.CategoryListener() {
             @Override
             public void onCategoriesChanged(List<Category> categories) {
+                if (!isAdded()) {
+                    return;
+                }
+
                 showLoading(false);
                 categoryList.clear();
                 categoryList.addAll(categories);
@@ -208,66 +212,8 @@ public class HomeFragment extends Fragment implements CategoryAdapter.OnCategory
     public void onDestroyView() {
         super.onDestroyView();
         if (categoryListener != null) {
-            // we can optionally remove listeners to avoid leaks idk how important that is;
+            categoryRepository.removeCategoriesListener(categoryListener);
+            categoryListener = null;
         }
-    }
-
-    @Override
-    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-        super.onCreateOptionsMenu(menu, inflater);
-        inflater.inflate(R.menu.menu_main, menu);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        int id = item.getItemId();
-
-        if (id == R.id.action_logout) {
-            handleLogout();
-            return true;
-        } else if (id == R.id.action_change_password) {
-            openChangePassword();
-            return true;
-        } else if (id == R.id.action_my_transactions) {
-            openMyTransactions();
-            return true;
-        } else if (id == R.id.action_my_listings) {
-            openMyListings();
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-    private void openMyTransactions() {
-        requireActivity().getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.main, new MyTransactionsFragment())
-                .addToBackStack(null)
-                .commit();
-    }
-    private void openMyListings() {
-        requireActivity().getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.main, new MyListingsFragment())
-                .addToBackStack(null)
-                .commit();
-    }
-
-    private void handleLogout() {
-        FirebaseAuth.getInstance().signOut();
-
-        requireActivity().getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.main, new LoginFragment())
-                .commit();
-    }
-
-    private void openChangePassword() {
-        requireActivity().getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.main, new ChangePasswordFragment())
-                .addToBackStack(null)
-                .commit();
     }
 }

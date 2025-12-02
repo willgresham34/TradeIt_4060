@@ -12,16 +12,6 @@
         android:hint="@string/hint_item_name" />
 
     <EditText
-        android:id="@+id/etItemDescription"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="@string/hint_item_description"
-        android:layout_marginTop="12dp"
-        android:minLines="2"
-        android:gravity="top"
-        android:inputType="textMultiLine" />
-
-    <EditText
         android:id="@+id/etItemPrice"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

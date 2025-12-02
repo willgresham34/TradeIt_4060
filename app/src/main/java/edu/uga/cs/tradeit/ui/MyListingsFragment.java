@@ -79,13 +79,35 @@ public class MyListingsFragment extends Fragment {
     }
 
     private void loadData() {
-        List<Item> allMyItems = itemRepository.getItemsByUser(currentUserId);
-        myItems.clear();
-        for (Item item : allMyItems) {
-            if (ItemStatus.AVAILABLE.name().equals(item.getStatus())) {
-                myItems.add(item);
+
+        itemRepository.setListener(new ItemRepository.ItemsListener() {
+            @Override
+            public void onItemsChanged(List<Item> allItems) {
+                if (!isAdded()) {
+                    return;
+                }
+
+                myItems.clear();
+                for (Item item : allItems) {
+                    if (currentUserId.equals(item.getSellerId()) &&
+                            ItemStatus.AVAILABLE.name().equals(item.getStatus())) {
+                        myItems.add(item);
+                    }
+                }
+
+                updateUI();
             }
-        }
+
+            @Override
+            public void onError(com.google.firebase.database.DatabaseError error) {
+                if (!isAdded()) {
+                    return;
+                }
+                Toast.makeText(requireContext(),
+                        "Failed to load items: " + error.getMessage(),
+                        Toast.LENGTH_LONG).show();
+            }
+        });
 
         categoryRepository.listenToCategories(new CategoryRepository.CategoryListener() {
             @Override
@@ -108,6 +130,9 @@ public class MyListingsFragment extends Fragment {
             }
         });
     }
+
+
+
 
     private void updateUI() {
         adapter.setData(myItems, categoryNameById);

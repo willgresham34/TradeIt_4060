@@ -3,6 +3,7 @@ package edu.uga.cs.tradeit.repository;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -24,6 +25,14 @@ public class ItemRepository {
     private final DatabaseReference itemsRef;
     private final DatabaseReference categoriesRef;
     private final List<Item> cachedItems = new ArrayList<>();
+    public interface ItemsListener {
+        void onItemsChanged(List<Item> items);
+        void onError(DatabaseError error);
+    }
+    private ItemsListener itemsListener;
+    public void setListener(ItemsListener listener) {
+        this.itemsListener = listener;
+    }
 
     public ItemRepository() {
         FirebaseDatabase db = FirebaseDatabase.getInstance();
@@ -42,6 +51,9 @@ public class ItemRepository {
                                 // add at front so list is newest-first
                                 cachedItems.add(0,item);
                             }
+                        }
+                        if (itemsListener != null) {
+                            itemsListener.onItemsChanged(new ArrayList<>(cachedItems));
                         }
                     }
 
@@ -91,9 +103,43 @@ public class ItemRepository {
         return result;
     }
 
+    public interface ItemLoadCallback {
+        void onItemLoaded(@Nullable Item item);
+    }
+
+    public void getItemByIdAsync(String itemId, ItemLoadCallback callback) {
+        if (itemId == null) {
+            callback.onItemLoaded(null);
+            return;
+        }
+
+        for (Item cached : cachedItems) {
+            if (itemId.equals(cached.getId())) {
+                callback.onItemLoaded(cached);
+                return;
+            }
+        }
+
+        itemsRef.child(itemId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (!task.isSuccessful() || task.getResult() == null || !task.getResult().exists()) {
+                        callback.onItemLoaded(null);
+                        return;
+                    }
+
+                    Item item = task.getResult().getValue(Item.class);
+                    if (item != null) {
+                        item.setId(task.getResult().getKey());
+                    }
+                    callback.onItemLoaded(item);
+                });
+    }
+
     // getItemById
     public Item getItemById(String itemId) {
         if (itemId == null) {
+            Log.w(TAG, "ItemId null, no item returned");
             return null;
         }
         for (Item item : cachedItems) {
@@ -101,6 +147,8 @@ public class ItemRepository {
                 return item;
             }
         }
+        Log.w(TAG, "Item not found");
+        Log.w(TAG, cachedItems.toString());
         return null;
     }
 
@@ -201,11 +249,6 @@ public class ItemRepository {
                     public void onComplete(DatabaseError error, boolean committed, DataSnapshot currentData) {
                     }
                 });
-    }
-    // listener interface for items
-    public interface ItemsListener {
-        void onItemsChanged(List<Item> items);
-        void onError(DatabaseError error);
     }
 
     public ValueEventListener listenToItemsForCategory(String categoryId, final ItemsListener listener) {

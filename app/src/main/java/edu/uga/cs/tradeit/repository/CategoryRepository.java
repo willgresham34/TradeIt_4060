@@ -93,4 +93,9 @@ public class CategoryRepository {
         categoriesRef.child(key).setValue(category)
                 .addOnCompleteListener(listener);
     }
+    public void removeCategoriesListener(ValueEventListener listener) {
+        if (listener != null) {
+            categoriesRef.removeEventListener(listener);
+        }
+    }
 }

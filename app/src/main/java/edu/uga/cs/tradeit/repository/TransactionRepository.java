@@ -29,6 +29,16 @@ public class TransactionRepository {
     private final DatabaseReference itemsRef;
     private final List<Transaction> cachedTransactions = new ArrayList<>();
 
+    public interface TransactionsListener {
+        void onTransactionsUpdated(List<Transaction> allTransactions);
+    }
+
+    private TransactionsListener listener;
+
+    public void setListener(TransactionsListener listener) {
+        this.listener = listener;
+    }
+
     public TransactionRepository() {
         FirebaseDatabase db = FirebaseDatabase.getInstance();
         transactionsRef = db.getReference("transactions");
@@ -46,6 +56,9 @@ public class TransactionRepository {
                                 // add at front so list is newest-first
                                 cachedTransactions.add(0, tx);
                             }
+                        }
+                        if (listener != null) {
+                            listener.onTransactionsUpdated(new ArrayList<>(cachedTransactions));
                         }
                     }
 

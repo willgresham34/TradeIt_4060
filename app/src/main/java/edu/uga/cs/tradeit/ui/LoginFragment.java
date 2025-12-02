@@ -19,6 +19,7 @@ import com.google.firebase.auth.FirebaseAuthInvalidUserException;
 
 import edu.uga.cs.tradeit.R;
 import edu.uga.cs.tradeit.repository.AuthRepository;
+import edu.uga.cs.tradeit.repository.UserRepository;
 
 public class LoginFragment extends Fragment {
 
@@ -69,6 +70,11 @@ public class LoginFragment extends Fragment {
 
         authRepository.login(email, password, task -> {
                     if (task.isSuccessful()) {
+                        String uid = authRepository.getCurrentUser().getUid();
+
+                        UserRepository userRepo = new UserRepository();
+                        userRepo.ensureUserRecordExists(uid, email);
+
                         Toast.makeText(requireContext(),
                                 "Logged in as: " + email,
                                 Toast.LENGTH_SHORT).show();

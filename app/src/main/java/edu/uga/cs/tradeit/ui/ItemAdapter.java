@@ -45,13 +45,6 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
         Item item = items.get(position);
         holder.nameTextView.setText(item.getName());
 
-        String desc = item.getDescription();
-        if (desc == null || desc.isEmpty()) {
-            holder.descriptionTextView.setText("");
-        } else {
-            holder.descriptionTextView.setText(desc);
-        }
-
         String priceText;
         Double price = item.getPrice();
         if (price == null || price == 0.0) {
